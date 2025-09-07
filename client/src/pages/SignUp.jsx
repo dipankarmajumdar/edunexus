@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { IoEyeOutline, IoEyeOffOutline } from "react-icons/io5";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
@@ -7,35 +7,28 @@ import { toast } from "react-toastify";
 import { ClipLoader } from "react-spinners";
 import { useDispatch } from "react-redux";
 import { setUserData } from "../redux/userSlice";
-import { signInWithPopup } from "firebase/auth";
-import { auth, provider } from "../../utils/firebase";
 
 const SignUp = () => {
   const dispatch = useDispatch();
-
-  const [show, setShow] = useState(false);
   const navigate = useNavigate();
+  const [show, setShow] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
     email: "",
     password: "",
     role: "",
   });
-  const [loading, setLoading] = useState(false);
 
   const handleSignup = async (e) => {
     e.preventDefault();
-
-    // Prevent multiple submissions
     if (loading) return;
     setLoading(true);
 
     try {
       const { name, email, password, role } = formData;
-
       if (!name || !email || !password || !role) {
         toast.error("Please fill in all required fields.");
-        setLoading(false);
         return;
       }
 
@@ -45,55 +38,29 @@ const SignUp = () => {
         { withCredentials: true }
       );
       dispatch(setUserData(data.user));
-
       toast.success("Signup successful!");
       setTimeout(() => navigate("/login"), 1500);
-    } catch (error) {
-      console.error("Signup error:", error);
-      toast.error(
-        error?.response?.data?.message || "Signup failed. Try again."
-      );
+    } catch (err) {
+      toast.error(err?.response?.data?.message || "Signup failed. Try again.");
     } finally {
       setLoading(false);
     }
   };
 
-  const googleSignUp = async (e) => {
-    e.preventDefault();
-
+  // OAuth signup: redirect to backend
+  const googleSignUp = () => {
     if (!formData.role) {
       toast.error("Please select a role before continuing with Google");
       return;
     }
-
-    try {
-      const { user } = await signInWithPopup(auth, provider);
-      const name = user.displayName;
-      const email = user.email;
-
-      const { data } = await axios.post(
-        `${serverURL}/api/auth/google-signup`,
-        { name, email, role: formData.role },
-        { withCredentials: true }
-      );
-
-      dispatch(setUserData(data.user));
-      toast.success("Signup successful!");
-      setTimeout(() => navigate("/"), 1500);
-    } catch (error) {
-      console.error("🔴 Google Signup Error:", error);
-      const message =
-        error?.response?.data?.message ||
-        "Google signup failed. Please try again.";
-      toast.error(message);
-    }
+    window.location.href = `${serverURL}/api/auth/google?role=${formData.role}`;
   };
 
   return (
     <div className="min-h-screen w-full bg-gray-50 text-gray-900 flex items-center justify-center px-4">
       <div className="bg-white shadow-2xl rounded-2xl w-full max-w-4xl grid md:grid-cols-2 overflow-hidden">
         {/* Left Form Section */}
-        <div className="flex flex-col justify-center p-6 sm:p-8 gap-4 overflow-y-auto max-h-screen -space-y-1">
+        <div className="flex flex-col justify-center p-6 sm:p-8 gap-4 overflow-y-auto -space-y-1">
           <div className="text-center">
             <h1 className="text-2xl font-bold text-gray-800">
               Let’s get started
@@ -173,33 +140,21 @@ const SignUp = () => {
 
           {/* Role Selector */}
           <div className="flex items-center justify-center gap-6">
-            <span
-              onClick={() =>
-                setFormData((prev) => ({ ...prev, role: "student" }))
-              }
-              className={`px-4 py-2 border rounded-full text-sm cursor-pointer transition ${
-                formData.role === "student"
-                  ? "border-black font-semibold"
-                  : "border-gray-300 hover:border-gray-500"
-              }`}
-            >
-              Student
-            </span>
-            <span
-              onClick={() =>
-                setFormData((prev) => ({ ...prev, role: "educator" }))
-              }
-              className={`px-4 py-2 border rounded-full text-sm cursor-pointer transition ${
-                formData.role === "educator"
-                  ? "border-black font-semibold"
-                  : "border-gray-300 hover:border-gray-500"
-              }`}
-            >
-              Educator
-            </span>
+            {["student", "educator"].map((r) => (
+              <span
+                key={r}
+                onClick={() => setFormData((prev) => ({ ...prev, role: r }))}
+                className={`px-4 py-2 border rounded-full text-sm cursor-pointer transition ${
+                  formData.role === r
+                    ? "border-black font-semibold"
+                    : "border-gray-300 hover:border-gray-500"
+                }`}
+              >
+                {r.charAt(0).toUpperCase() + r.slice(1)}
+              </span>
+            ))}
           </div>
 
-          {/* Signup Button */}
           <button
             onClick={handleSignup}
             className="w-full h-10 bg-black text-white rounded-md text-sm font-medium hover:opacity-90 transition cursor-pointer"
@@ -208,14 +163,12 @@ const SignUp = () => {
             {loading ? <ClipLoader size={20} color="white" /> : "Sign up"}
           </button>
 
-          {/* Or Divider */}
           <div className="flex items-center justify-center gap-3 text-sm text-gray-400">
             <div className="flex-grow h-px bg-gray-300" />
             <span>or</span>
             <div className="flex-grow h-px bg-gray-300" />
           </div>
 
-          {/* Google Signin */}
           <div
             onClick={googleSignUp}
             className="w-full h-10 border border-black rounded-md flex items-center justify-center gap-2 text-sm cursor-pointer hover:bg-gray-100 transition"
@@ -228,7 +181,6 @@ const SignUp = () => {
             <span>Sign up with Google</span>
           </div>
 
-          {/* Redirect */}
           <div className="text-[#6f6f6f] text-center">
             Already have an account?{" "}
             <span

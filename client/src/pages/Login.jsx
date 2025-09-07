@@ -7,33 +7,23 @@ import { toast } from "react-toastify";
 import { ClipLoader } from "react-spinners";
 import { useDispatch } from "react-redux";
 import { setUserData } from "../redux/userSlice";
-import { signInWithPopup } from "firebase/auth";
-import { auth, provider } from "../../utils/firebase";
 
 const Login = () => {
   const dispatch = useDispatch();
-
-  const [show, setShow] = useState(false);
   const navigate = useNavigate();
-  const [formData, setFormData] = useState({
-    email: "",
-    password: "",
-  });
+  const [show, setShow] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [formData, setFormData] = useState({ email: "", password: "" });
 
   const handleLogin = async (e) => {
     e.preventDefault();
-
-    // Prevent multiple submissions
     if (loading) return;
     setLoading(true);
 
     try {
       const { email, password } = formData;
-
       if (!email || !password) {
         toast.error("Please fill in all required fields.");
-        setLoading(false);
         return;
       }
 
@@ -42,45 +32,20 @@ const Login = () => {
         { email, password },
         { withCredentials: true }
       );
-      dispatch(setUserData(response.data.user));
 
+      dispatch(setUserData(response.data.user));
       toast.success("Login successful!");
-      setTimeout(() => navigate("/"), 2000);
-    } catch (error) {
-      console.error("Login error:", error);
-      toast.error(error?.response?.data?.message || "Login failed. Try again.");
+      setTimeout(() => navigate("/"), 1500);
+    } catch (err) {
+      toast.error(err?.response?.data?.message || "Login failed. Try again.");
     } finally {
       setLoading(false);
     }
   };
 
-  const googleLogin = async (e) => {
-    e.preventDefault();
-
-    try {
-      const { user } = await signInWithPopup(auth, provider);
-
-      const email = user.email;
-      const role = user.role;
-
-      const { data } = await axios.post(
-        `${serverURL}/api/auth/google-login`,
-        { email, role },
-        { withCredentials: true }
-      );
-
-      dispatch(setUserData(data.user));
-      toast.success("Login successful!");
-
-      setTimeout(() => navigate("/"), 1500);
-    } catch (error) {
-      console.error("🔴 Google Login Error:", error);
-
-      const message =
-        error?.response?.data?.message ||
-        "Google login failed. Please try again.";
-      toast.error(message);
-    }
+  // OAuth login: redirect to backend route
+  const googleLogin = () => {
+    window.location.href = `${serverURL}/api/auth/google`; // redirect to backend OAuth
   };
 
   return (
@@ -90,7 +55,7 @@ const Login = () => {
         <div className="flex flex-col justify-center p-6 sm:p-8 gap-4 overflow-y-auto max-h-screen">
           <div className="text-center">
             <h1 className="text-2xl font-bold text-gray-800">Welcome back</h1>
-            <p className="text-gray-500 text-sm">Login your account</p>
+            <p className="text-gray-500 text-sm">Login to your account</p>
           </div>
 
           {/* Email */}
@@ -143,7 +108,6 @@ const Login = () => {
             </span>
           </div>
 
-          {/* Login Button */}
           <button
             onClick={handleLogin}
             className="w-full h-10 bg-black text-white rounded-md text-sm font-medium hover:opacity-90 transition cursor-pointer"
@@ -151,7 +115,7 @@ const Login = () => {
           >
             {loading ? <ClipLoader size={20} color="white" /> : "Login"}
           </button>
-          {/* Forgot Password */}
+
           <span
             onClick={() => navigate("/forgot-password")}
             className="text-sm cursor-pointer text-[#585757] text-center"
@@ -159,14 +123,12 @@ const Login = () => {
             Forgot your password?
           </span>
 
-          {/* Or Divider */}
           <div className="flex items-center justify-center gap-3 text-sm text-gray-400">
             <div className="flex-grow h-px bg-gray-300" />
             <span>or</span>
             <div className="flex-grow h-px bg-gray-300" />
           </div>
 
-          {/* Google Signin */}
           <div
             onClick={googleLogin}
             className="w-full h-10 border border-black rounded-md flex items-center justify-center gap-2 text-sm cursor-pointer hover:bg-gray-100 transition"
@@ -179,9 +141,8 @@ const Login = () => {
             <span>Login with Google</span>
           </div>
 
-          {/* Redirect */}
           <div className="text-[#6f6f6f] text-center">
-            Create an new account?{" "}
+            Create a new account?{" "}
             <span
               className="underline underline-offset-1 text-black cursor-pointer"
               onClick={() => navigate("/signup")}
