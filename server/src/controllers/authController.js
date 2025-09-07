@@ -3,6 +3,8 @@ import User from "../models/User.js";
 import validator from "validator";
 import genToken from "../config/token.js";
 import sendMail from "../config/sendMail.js";
+import passport from "passport"
+import { config } from "../config/config.js";
 
 /**
  * @desc User Registration
@@ -397,5 +399,46 @@ export const googleLogin = async (req, res) => {
     return res
       .status(500)
       .json({ message: "Google login failed. Please try again later." });
+  }
+};
+
+
+
+// Called after Google OAuth callback
+export const googleOAuthCallback = async (req, res) => {
+  try {
+    const { email, name, picture } = req.user; // req.user from passport
+    let user = await User.findOne({ email });
+
+    if (!user) {
+      // New user → signup
+      const randomPassword = Math.random().toString(36).slice(-8);
+      const hashedPassword = await bcrypt.hash(randomPassword, 10);
+
+      user = await User.create({
+        name,
+        email,
+        password: hashedPassword,
+        isOAuthUser: true,
+        photoUrl: picture,
+      });
+    }
+
+    // Generate JWT token
+    const token = genToken(user);
+
+    // Set secure cookie
+    res.cookie("token", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "Strict",
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
+
+    // Redirect to frontend with token
+    res.redirect(`${process.env.CLIENT_URL}?token=${token}`);
+  } catch (error) {
+    console.error("🔴 Google OAuth Error:", error);
+    return res.status(500).json({ message: "Google OAuth failed." });
   }
 };

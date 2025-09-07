@@ -2,12 +2,6 @@ import { RateLimiterRedis } from "rate-limiter-flexible";
 import Redis from "ioredis";
 import { config } from "./config.js";
 
-// const redisClient = new Redis({
-//   host: config.redis.host,
-//   port: config.redis.port,
-//   enableOfflineQueue: false,
-// });
-
 const redisClient = new Redis(config.redis.url, {
   tls: {},
   enableOfflineQueue: false,

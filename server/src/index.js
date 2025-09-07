@@ -2,6 +2,7 @@ import express from "express";
 import cookieParser from "cookie-parser";
 import cors from "cors";
 import helmet from "helmet";
+import passport from "./config/passport.js";
 
 import { config } from "./config/config.js";
 import { connectDB } from "./config/db.js";
@@ -27,6 +28,7 @@ app.use(
 // Body & Cookie parsers
 app.use(express.json());
 app.use(cookieParser());
+app.use(passport.initialize());
 
 // Sample route
 app.get("/", (req, res) => {

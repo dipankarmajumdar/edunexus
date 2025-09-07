@@ -8,6 +8,7 @@ import {
   resetPassword,
   googleSignUp,
   googleLogin,
+  googleOAuthCallback,
 } from "../controllers/authController.js";
 import { rateLimitMiddleware } from "../middlewares/rateLimit.js";
 import {
@@ -16,6 +17,7 @@ import {
   otpLimiter,
   resetPasswordLimiter,
 } from "../config/limiter.js";
+import passport from "passport";
 
 const authRouter = express.Router();
 
@@ -38,6 +40,14 @@ authRouter.post(
   "/google-login",
   rateLimitMiddleware(loginLimiter),
   googleLogin
+);
+
+authRouter.get("/google", passport.authenticate("google", { scope: ["profile", "email"] }));
+
+authRouter.get(
+  "/google/callback",
+  passport.authenticate("google", { session: false }),
+  googleOAuthCallback
 );
 
 export default authRouter;
